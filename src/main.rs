@@ -2,8 +2,6 @@ use std::fs::{read_dir,DirEntry,read_to_string};
 use std::path::{PathBuf};
 use std::env;
 use rayon::prelude::*;
-use std::io::{Error};
-use std::collections::HashMap;
 mod parse;
 
 fn check_dir(list: parse::LockedLicenseEntryList, mut unwrapped_path: PathBuf, found_at_sign: bool, prefix: String) {
