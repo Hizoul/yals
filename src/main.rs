@@ -6,7 +6,7 @@ use std::io::{Error};
 use std::collections::HashMap;
 mod parse;
 
-fn check_dir(list: parse::LockedLicenseList, mut unwrapped_path: PathBuf, found_at_sign: bool, prefix: String) {
+fn check_dir(list: parse::LockedLicenseEntryList, mut unwrapped_path: PathBuf, found_at_sign: bool, prefix: String) {
   // println!("Reading directory {}", unwrapped_path.display());
   let last = unwrapped_path.components().last();
   match last {
@@ -23,7 +23,6 @@ fn check_dir(list: parse::LockedLicenseList, mut unwrapped_path: PathBuf, found_
         };
       }
       unwrapped_path.push("package.json");
-      // println!("Reading File {}", unwrapped_path.display());
       let contents = read_to_string(unwrapped_path.as_path());
       match contents {
         Ok(v) => {
@@ -50,17 +49,14 @@ fn main() {
     } else {
       to_scan = "./".to_owned();
     }
-    println!("Scanning directory: {}", to_scan);
     let paths = read_dir(to_scan).unwrap();
     let collected: Vec<Result<DirEntry, std::io::Error>> = paths.collect();
     let parrallel_iterator = collected.into_par_iter();
-    let list: parse::LicenseList = HashMap::new();
-    let locked_list = std::sync::Arc::new(std::sync::RwLock::new(list));
+    let locked_list: parse::LockedLicenseEntryList = std::sync::Arc::new(std::sync::RwLock::new(Vec::new()));
     parrallel_iterator.for_each(|path| check_dir(locked_list.clone(), path.unwrap().path(), false, "".to_owned()));
-    let map = locked_list.read().unwrap();
-    let mit = map.get("MIT").unwrap().read().unwrap();
-    println!("list is done");
-    for m in mit.iter() {
-      println!("under mit is {}", m)
+    let mut readable_list = locked_list.write().unwrap();
+    readable_list.sort_by(|a, b| a.name.cmp(&b.name));
+    for e in readable_list.iter() {
+      println!("{} licensed under {}. Repository: {}", e.name, e.license, e.url)
     }
 }
