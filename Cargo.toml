@@ -5,3 +5,4 @@ authors = ["Matthias Müller-Brockhausen <git@mmb2.click>"]
 edition = "2018"
 
 [dependencies]
+rayon = "1.0"
