@@ -5,7 +5,6 @@ use rayon::prelude::*;
 mod parse;
 
 fn check_dir(list: parse::LockedLicenseEntryList, mut unwrapped_path: PathBuf, found_at_sign: bool, prefix: String) {
-  // println!("Reading directory {}", unwrapped_path.display());
   let last = unwrapped_path.components().last();
   match last {
     Some(c) => {
