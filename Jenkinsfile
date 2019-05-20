@@ -20,6 +20,8 @@ pipeline {
       }
       steps {
         sh 'rustup default stable'
+        sh 'rustup target add x86_86-pc-windows-gnu'
+        sh 'rustup target add i686-pc-windows-gnu'
         sh 'sh scripts/build_windows.sh'
         archiveArtifacts artifacts: 'target/x86_86-pc-windows-gnu/release/yals.exe', fingerprint: true
         archiveArtifacts artifacts: 'target/i686-pc-windows-gnu/release/yals.exe', fingerprint: true
