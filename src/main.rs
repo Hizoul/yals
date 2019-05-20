@@ -1,10 +1,12 @@
 use std::fs::{read_dir,DirEntry,read_to_string};
 use std::path::{PathBuf};
-use std::env;
+use std::env::{args};
+use std::sync::{Arc,RwLock};
 use rayon::prelude::*;
 mod parse;
+use parse::{LockedLicenseEntryList,process_pkg_json};
 
-fn check_dir(list: parse::LockedLicenseEntryList, mut unwrapped_path: PathBuf, found_at_sign: bool, prefix: String) {
+fn check_dir(list: LockedLicenseEntryList, mut unwrapped_path: PathBuf, found_at_sign: bool, prefix: String) {
   let last = unwrapped_path.components().last();
   match last {
     Some(c) => {
@@ -29,7 +31,7 @@ fn check_dir(list: parse::LockedLicenseEntryList, mut unwrapped_path: PathBuf, f
             full_name.push_str("/");
           }
           full_name.push_str(name_end_clone.as_str());
-          parse::process_pkg_json(list.clone(), full_name,v)
+          process_pkg_json(list.clone(), full_name,v)
         },
         Err(_) => {}
       }
@@ -40,16 +42,16 @@ fn check_dir(list: parse::LockedLicenseEntryList, mut unwrapped_path: PathBuf, f
 
 fn main() {
     let to_scan: String;
-    let arg: Vec<String> = env::args().collect();
+    let arg: Vec<String> = args().collect();
     if arg.len() > 1 {
       to_scan = arg[1].to_owned();
     } else {
       to_scan = "./".to_owned();
     }
     let paths = read_dir(to_scan).unwrap();
-    let collected: Vec<Result<DirEntry, std::io::Error>> = paths.collect();
+    let collected: Vec<Result<DirEntry, _>> = paths.collect();
     let parrallel_iterator = collected.into_par_iter();
-    let locked_list: parse::LockedLicenseEntryList = std::sync::Arc::new(std::sync::RwLock::new(Vec::new()));
+    let locked_list: LockedLicenseEntryList = Arc::new(RwLock::new(Vec::new()));
     parrallel_iterator.for_each(|path| check_dir(locked_list.clone(), path.unwrap().path(), false, "".to_owned()));
     let mut readable_list = locked_list.write().unwrap();
     readable_list.sort_by(|a, b| a.name.cmp(&b.name));

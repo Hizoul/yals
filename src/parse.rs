@@ -1,5 +1,5 @@
-use serde_json::{Result, Value};
-use std::collections::HashMap;
+use serde_json::{from_str,Result, Value};
+use std::sync::{Arc,RwLock};
 
 pub struct LicenseEntry {
   pub name: String,
@@ -7,10 +7,7 @@ pub struct LicenseEntry {
   pub url: String
 }
 
-pub type LockedLicenseEntryList = std::sync::Arc<std::sync::RwLock<Vec<LicenseEntry>>>;
-
-pub type LicenseList = HashMap<String, std::sync::RwLock<Vec<String>>>;
-pub type LockedLicenseList = std::sync::Arc<std::sync::RwLock<LicenseList>>;
+pub type LockedLicenseEntryList = Arc<RwLock<Vec<LicenseEntry>>>;
 
 pub fn get_repo(v: Value) -> String {
   if v.is_string() {
@@ -27,7 +24,7 @@ pub fn get_repo(v: Value) -> String {
 }
 
 pub fn process_pkg_json(list: LockedLicenseEntryList, name: String, content: String) {
-  let v: Result<Value> = serde_json::from_str(&content);
+  let v: Result<Value> = from_str(&content);
   if v.is_ok() {
     let c = v.unwrap();
     let license_type = &c["license"];
@@ -35,7 +32,7 @@ pub fn process_pkg_json(list: LockedLicenseEntryList, name: String, content: Str
       let license_type_str = license_type.as_str().unwrap();
       let lock = list.write();
       if lock.is_ok() {
-        let mut guard: std::sync::RwLockWriteGuard<Vec<LicenseEntry>> = lock.unwrap();
+        let mut guard = lock.unwrap();
         guard.push(LicenseEntry {
           name: name.clone(),
           license: String::from(license_type_str),
